@@ -1,36 +1,57 @@
-const { inquirerMenu, pause, readInput } = require("./helpers/inquirer");
+require("dotenv").config();
+
+const {
+  inquirerMenu,
+  pause,
+  readInput,
+  listPlaces,
+} = require("./helpers/inquirer");
 const Search = require("./models/search");
 
 const main = async () => {
+  let opt;
 
-    let opt;
+  const searchs = new Search();
 
-    const searchs = new Search();
+  do {
+    opt = await inquirerMenu();
 
-    do {
-        opt = await inquirerMenu();
+    switch (opt) {
+      case 1:
+        const term = await readInput("City: ");
+        const places = await searchs.city(term);
+        const id = await listPlaces(places);
 
-        switch (opt) {
-            case 1:
-                const term = await readInput("City: ");
-                const places = await searchs.city(term);
-
-                console.log(places);
-                console.log("\nCity information\n".green);
-                console.log("City: ",);
-                console.log("Lat: ",);
-                console.log("Long: ",);
-                console.log("Weather: ",);
-                console.log("Min: ",);
-                console.log("Max: ",);
-                break;
-            case 2:
-                break;
+        if (id === "0") {
+          continue;
         }
 
-        if (opt !== 0) await pause();
+        const placeSelected = places.find((x) => x.id == id);
+        searchs.addHistorial(placeSelected.name);
+        const weather = await searchs.weather(
+          placeSelected.lat,
+          placeSelected.lng
+        );
 
-    } while (opt != 0)
-}
+        console.clear();
+        console.log("\nCity information\n".green);
+        console.log("City: " + placeSelected.name);
+        console.log("Lat: " + placeSelected.lat);
+        console.log("Long: " + placeSelected.lng);
+        console.log("Weather: " + weather.temp + ", " + weather.desc);
+        console.log("Min: " + weather.min);
+        console.log("Max: " + weather.max);
+        break;
+      case 2:
+        searchs.capitalCaseHistorial.forEach((place, i) => {
+          const idx = `${i + 1}`.green;
+          console.log(`${idx} ${place}`);
+        });
+        break;
+    }
+
+    if (opt !== 0) await pause();
+  } while (opt != 0);
+};
 
 main();
